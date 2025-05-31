@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaTrash, FaSearch } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaPlus, FaEdit } from 'react-icons/fa';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -45,7 +45,9 @@ function DashboardPage() {
           axios.get(`${API_BASE}/auth/friends/sorted`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(`${API_BASE}/categories`),
+          axios.get(`${API_BASE}/categories`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
         setBirthdays(Array.isArray(birthdaysRes.data) ? birthdaysRes.data : []);
         const catMap = {};
@@ -180,7 +182,7 @@ function DashboardPage() {
           title="Arkadaş Ekle"
           onClick={() => openModal('add')}
         >
-          +
+          <FaPlus className="w-5 h-5" />
         </button>
       </div>
 
@@ -226,6 +228,102 @@ function DashboardPage() {
             );
           })}
         </ul>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-2xl font-bold text-[#1a1a1a] mb-6">
+              {modalMode === 'add' ? 'Yeni Arkadaş Ekle' : 'Arkadaş Düzenle'}
+            </h3>
+            <form onSubmit={handleModalSubmit} className="space-y-6">
+              <div>
+                <label className="block text-base font-medium mb-1">İsim</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
+                  style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium mb-1">Doğum Tarihi</label>
+                <input
+                  type="date"
+                  name="birthDate"
+                  value={form.birthDate}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                  className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
+                  style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium mb-1">Kategori</label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
+                  style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
+                  required
+                >
+                  <option value="">Kategori Seçin</option>
+                  {categoriesArr.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-6 py-3 text-base font-semibold text-gray-600 hover:text-gray-800 transition"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#889e38] text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-[#6e812e] transition shadow-md"
+                >
+                  {modalMode === 'add' ? 'Ekle' : 'Güncelle'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-2xl font-bold text-[#1a1a1a] mb-6">Arkadaşı Sil</h3>
+            <p className="text-base text-gray-700 mb-6">
+              Bu arkadaşı silmek istediğinizden emin misiniz?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={confirmDeleteFriend}
+                className="px-6 py-3 text-base font-semibold text-gray-600 hover:text-gray-800 transition"
+              >
+                Sil
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-6 py-3 text-base font-semibold text-gray-600 hover:text-gray-800 transition"
+              >
+                İptal
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
