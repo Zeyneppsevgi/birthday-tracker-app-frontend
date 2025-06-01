@@ -15,6 +15,7 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -58,6 +59,9 @@ function ProfilePage() {
   }, []);
 
   const handleChange = (e) => {
+    if (e.target.name === 'password' && passwordError) {
+        setPasswordError('');
+    }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -65,6 +69,13 @@ function ProfilePage() {
     e.preventDefault();
     setSuccess('');
     setError('');
+    setPasswordError('');
+
+    if (formData.password && formData.password.length < 6) {
+        setPasswordError('Parola en az 6 karakter olmalıdır');
+        return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -79,13 +90,18 @@ function ProfilePage() {
       });
       setSuccess('Profil güncellendi!');
       setLoading(false);
+      setFormData(prev => ({ ...prev, password: '' }));
       setTimeout(() => {
         navigate('/dashboard');
       }, 1000);
     } catch (err) {
       console.error('Profil güncellenirken hata:', err);
       if (err.response) {
-        setError(`Hata: ${err.response.data?.message || 'Sunucu hatası'}`);
+        if (err.response.data?.errors?.password) {
+            setPasswordError(err.response.data.errors.password);
+        } else {
+            setError(`Hata: ${err.response.data?.message || 'Sunucu hatası'}`);
+        }
       } else if (err.request) {
         setError('Sunucuya ulaşılamıyor. Lütfen internet bağlantınızı kontrol edin.');
       } else {
@@ -153,10 +169,11 @@ function ProfilePage() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
+              className={`w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border ${passwordError ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans`}
               style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
               placeholder="Şifreyi değiştirmek için girin"
             />
+            {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
           </div>
           {success && <div className="text-green-600 text-center">{success}</div>}
           {error && <div className="text-red-500 text-center">{error}</div>}
