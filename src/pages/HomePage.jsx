@@ -25,7 +25,7 @@ function HomePage() {
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center bg-gray-50 py-12 px-4">
-      {/* Hero Section */}
+
       <div className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-extrabold text-[#1a1a1a] mb-6">
           Birthday Tracker App
@@ -58,7 +58,6 @@ function HomePage() {
         )}
       </div>
 
-      {/* Features Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
         {features.map((feature, index) => (
           <div

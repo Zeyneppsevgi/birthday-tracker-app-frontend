@@ -20,6 +20,7 @@ function DashboardPage() {
   const [search, setSearch] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [pagination, setPagination] = useState(null);
 
   const zodiacIcons = {
     'Koç': '♈', 'Boğa': '♉', 'İkizler': '♊', 'Yengeç': '♋',
@@ -49,7 +50,9 @@ function DashboardPage() {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
-        setBirthdays(Array.isArray(birthdaysRes.data) ? birthdaysRes.data : []);
+        setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
+        setPagination(birthdaysRes.data?.pagination || null);
+
         const catMap = {};
         if (Array.isArray(categoriesRes.data)) {
           categoriesRes.data.forEach(cat => {
@@ -63,6 +66,7 @@ function DashboardPage() {
         setBirthdays([]);
         setCategories({});
         setCategoriesArr([]);
+        setPagination(null);
       } finally {
         setLoading(false);
       }
@@ -124,7 +128,9 @@ function DashboardPage() {
       const birthdaysRes = await axios.get(`${API_BASE}/auth/friends/sorted`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBirthdays(Array.isArray(birthdaysRes.data) ? birthdaysRes.data : []);
+      setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
+      setPagination(birthdaysRes.data?.pagination || null);
+
       setTimeout(() => {
         setShowModal(false);
         setModalSuccess('');
@@ -151,7 +157,9 @@ function DashboardPage() {
       const birthdaysRes = await axios.get(`${API_BASE}/auth/friends/sorted`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBirthdays(Array.isArray(birthdaysRes.data) ? birthdaysRes.data : []);
+      setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
+      setPagination(birthdaysRes.data?.pagination || null);
+
       setShowDeleteModal(false);
       setDeleteTargetId(null);
     } catch (err) {
@@ -191,7 +199,8 @@ function DashboardPage() {
       {!loading && !error && (
         <ul className="space-y-2">
           {filteredBirthdays.map(friend => {
-            const catName = categories[friend.category] || categories[String(friend.category)] || categories[Number(friend.category)];
+            const catId = typeof friend.category === 'object' ? friend.category.id : friend.category;
+            const catName = categories[catId] || categories[String(catId)] || categories[Number(catId)];
             return (
               <li
                 key={friend.id}

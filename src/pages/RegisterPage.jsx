@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+console.log(API_BASE);
 function RegisterPage() {
   const [form, setForm] = useState({
     name: '',
@@ -18,7 +20,6 @@ function RegisterPage() {
   return (
     <div className="min-h-[60vh] flex items-start justify-center bg-gray-50">
       <div className="bg-white rounded-2xl shadow-lg p-4 md:p-8 w-full max-w-md border border-gray-200 mt-8">
-        
         <div className="flex mb-6 md:mb-8">
           <button
             className="flex-1 py-2 md:py-4 rounded-tl-xl rounded-bl-xl text-base md:text-lg font-bold transition-colors focus:outline-none text-[#1a1a1a] bg-white border border-r-0 border-gray-200"
@@ -33,25 +34,28 @@ function RegisterPage() {
             Üye Ol
           </button>
         </div>
-        <form onSubmit={async e => {
-          e.preventDefault();
-          setError('');
-          setSuccess('');
-          setLoading(true);
-          try {
-            const response = await axios.post('http://localhost:3000/api/register', form);
-            setSuccess(response.data.message || 'Kayıt başarılı');
-            setForm({ name: '', surname: '', email: '', password: '', birthdate: '' });
-          } catch (err) {
-            if (err.response && err.response.data && err.response.data.message) {
-              setError(err.response.data.message);
-            } else {
-              setError('Bir hata oluştu.');
+        <form
+          onSubmit={async e => {
+            e.preventDefault();
+            setError('');
+            setSuccess('');
+            setLoading(true);
+            try {
+              const response = await axios.post(`${API_BASE}/register`, form);
+              setSuccess(response.data.message || 'Kayıt başarılı');
+              setForm({ name: '', surname: '', email: '', password: '', birthdate: '' });
+            } catch (err) {
+              if (err.response?.data?.message) {
+                setError(err.response.data.message);
+              } else {
+                setError('Bir hata oluştu.');
+              }
+            } finally {
+              setLoading(false);
             }
-          } finally {
-            setLoading(false);
-          }
-        }} className="space-y-6">
+          }}
+          className="space-y-6"
+        >
           <input
             type="text"
             name="name"

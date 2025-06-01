@@ -157,7 +157,7 @@ function ProfilePage() {
               onChange={handleChange}
               className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
               style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
-              placeholder="Şifrenizi değiştirmek istemiyorsanız boş bırakın"
+              placeholder="Şifreyi değiştirmek için girin"
             />
           </div>
           {success && <div className="text-green-600 text-center">{success}</div>}
