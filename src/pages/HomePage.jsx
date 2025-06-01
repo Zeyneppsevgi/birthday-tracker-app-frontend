@@ -41,20 +41,12 @@ function HomePage() {
             Dashboard'a Git
           </button>
         ) : (
-          <div className="space-x-4">
-            <Link
-              to="/register"
-              className="bg-[#889e38] text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-[#6e812e] transition shadow-lg inline-block"
-            >
-              Hemen Başla
-            </Link>
-            <Link
-              to="/login"
-              className="bg-white text-[#889e38] px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition shadow-lg border border-[#889e38] inline-block"
-            >
-              Giriş Yap
-            </Link>
-          </div>
+          <Link
+            to="/register"
+            className="bg-[#889e38] text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-[#6e812e] transition shadow-lg inline-block"
+          >
+            Hemen Başla
+          </Link>
         )}
       </div>
 
