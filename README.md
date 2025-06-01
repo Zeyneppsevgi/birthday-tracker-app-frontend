@@ -92,9 +92,6 @@ bash
 3.  **Ortam değişkenlerini ayarlayın:**
     Projenin kök dizininde .env adında bir dosya oluşturun ve backend API'nizin temel URL'sini ayarlayın.
     
-env
-    VITE_API_BASE_URL=https://birthday-tracker-production.up.railway.app/api
-
 
 ### Geliştirme Sunucusunu Çalıştırma
 
