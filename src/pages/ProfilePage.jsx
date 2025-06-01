@@ -149,7 +149,9 @@ function ProfilePage() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-1">Yeni Şifre</label>
+            <label className="block text-base font-medium mb-1">
+              Yeni Şifre <span className="text-sm italic text-gray-500">(İsteğe bağlı)</span>
+            </label>
             <input
               type="password"
               name="password"
