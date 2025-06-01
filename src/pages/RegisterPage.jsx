@@ -10,11 +10,6 @@ const isValidEmail = (email) => {
   return emailRegex.test(email);
 };
 
-const isValidDate = (date) => {
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  return dateRegex.test(date);
-};
-
 function RegisterPage() {
   const [form, setForm] = useState({
     firstName: '',
@@ -24,6 +19,7 @@ function RegisterPage() {
     birthDate: ''
   });
   const [formErrors, setFormErrors] = useState({});
+  const [birthDateError, setBirthDateError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -31,6 +27,9 @@ function RegisterPage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+    if (name === 'birthDate' && birthDateError) {
+        setBirthDateError('');
+    }
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -59,6 +58,7 @@ function RegisterPage() {
             setSuccess('');
             const newErrors = {};
             setFormErrors({});
+            setBirthDateError('');
 
             if (form.firstName.length < 3) {
                 newErrors.firstName = "İsim en az 3 karakter olmalıdır";
@@ -72,10 +72,14 @@ function RegisterPage() {
             if (form.password.length < 6) {
                 newErrors.password = "Parola en az 6 karakter olmalıdır";
             }
-            if (!isValidDate(form.birthDate)) {
-                newErrors.birthDate = "Doğum tarihi formatı YYYY-MM-DD olmalıdır";
-            }
             
+            const today = new Date().toISOString().split('T')[0];
+            if (form.birthDate && form.birthDate > today) {
+                setBirthDateError('Doğum tarihi gelecekte olamaz.');
+                 setFormErrors(newErrors);
+                return;
+            }
+
             setFormErrors(newErrors);
 
             if (Object.keys(newErrors).length > 0) {
@@ -88,16 +92,24 @@ function RegisterPage() {
               setSuccess(response.data.message || 'Kayıt başarılı');
               setForm({ firstName: '', lastName: '', email: '', password: '', birthDate: '' });
               setFormErrors({});
+              setBirthDateError('');
               
               setTimeout(() => {
                 navigate('/login');
               }, 2000);
             } catch (err) {
+              console.error('Kayıt hatası:', err);
               if (err.response?.data?.errors) { 
-                setFormErrors(err.response.data.errors);
+                 if (err.response.data?.errors?.birthDate) {
+                     setBirthDateError(err.response.data.errors.birthDate);
+                 } else {
+                    setFormErrors(err.response.data.errors);
+                 }
               } else {
                 setFormErrors({});
+                setBirthDateError('');
                 setSuccess(''); 
+                alert(`Kayıt sırasında bir hata oluştu: ${err.response?.data?.message || err.message}`);
               }
             } finally {
               setLoading(false);
@@ -169,10 +181,11 @@ function RegisterPage() {
               value={form.birthDate}
               onChange={handleInputChange} 
               placeholder="Doğum Tarihi"
-              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.birthDate ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
+              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.birthDate || birthDateError ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
               required
             />
              {formErrors.birthDate && <p className="text-red-500 text-xs mt-1">{formErrors.birthDate}</p>} 
+             {birthDateError && <p className="text-red-500 text-xs mt-1">{birthDateError}</p>}
           </div>
 
           {success && <div className="text-green-600 text-center">{success}</div>}
