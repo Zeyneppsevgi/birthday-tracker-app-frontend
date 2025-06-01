@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTrash, FaSearch, FaPlus, FaEdit, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -27,7 +26,6 @@ function DashboardPage() {
     total: 0,
     totalPages: 0,
   });
-  const [birthDateModalError, setBirthDateModalError] = useState('');
 
   const zodiacIcons = {
     'Koç': '♈', 'Boğa': '♉', 'İkizler': '♊', 'Yengeç': '♋',
@@ -43,8 +41,6 @@ function DashboardPage() {
     'Dear': 'bg-pink-100 text-pink-700',
   };
 
-  const navigate = useNavigate();
-
   useEffect(() => {
     fetchData(pagination.page);
   }, [pagination.page]);
@@ -54,11 +50,6 @@ function DashboardPage() {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
       const [birthdaysRes, categoriesRes] = await Promise.all([
         axios.get(`${API_BASE}/auth/friends/sorted?page=${pageToFetch}&limit=${pagination.limit}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -105,8 +96,6 @@ function DashboardPage() {
     setModalError('');
     setModalSuccess('');
     setModalLoading(false);
-    setBirthDateModalError('');
-
     if (mode === 'edit' && friend) {
       setModalFriendId(friend.id);
       setForm({
@@ -121,28 +110,11 @@ function DashboardPage() {
     setShowModal(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-    if (name === 'birthDate' && birthDateModalError) {
-        setBirthDateModalError('');
-    }
-  };
-
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     setModalError('');
     setModalSuccess('');
     setModalLoading(true);
-    setBirthDateModalError('');
-
-    const today = new Date().toISOString().split('T')[0];
-    if (form.birthDate && form.birthDate > today) {
-        setBirthDateModalError('Doğum tarihi gelecekte olamaz.');
-        setModalLoading(false);
-        return;
-    }
-
     try {
       const token = localStorage.getItem('token');
       let response;
@@ -150,7 +122,7 @@ function DashboardPage() {
         response = await axios.post(`${API_BASE}/auth/add/friend`, {
           name: form.name,
           birthDate: form.birthDate,
-          categoryId: Number(form.category),
+          category: Number(form.category),
         }, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -170,15 +142,9 @@ function DashboardPage() {
       setTimeout(() => {
         setShowModal(false);
         setModalSuccess('');
-        setBirthDateModalError('');
       }, 1000);
     } catch (err) {
-      console.error('Arkadaş kaydedilirken hata oluştu:', err);
-      if (err.response?.data?.errors?.birthDate) {
-           setBirthDateModalError(err.response.data.errors.birthDate);
-      } else {
-           setModalError(err.response?.data?.message || 'Bir hata oluştu.');
-      }
+      setModalError(err.response?.data?.message || 'Bir hata oluştu.');
     } finally {
       setModalLoading(false);
     }
@@ -234,11 +200,10 @@ function DashboardPage() {
 
       {loading && <div>Yükleniyor...</div>}
       {error && <div className="text-red-500">{error}</div>}
-      {!loading && !error && (filteredBirthdays.length === 0 ? (
-         <div className="text-center text-gray-600">Hiç arkadaş bulunamadı. İlk arkadaşını ekle!</div>
-      ) : (
-        <ul className="space-y-2 mb-4">
-          {filteredBirthdays.map(friend => {
+      {!loading && !error && (
+        <>
+          <ul className="space-y-2 mb-4">
+            {filteredBirthdays.map(friend => {
               const catId = typeof friend.category === 'object' ? friend.category.id : friend.category;
               const catName = categories[catId] || categories[String(catId)] || categories[Number(catId)];
               return (
@@ -277,32 +242,33 @@ function DashboardPage() {
               );
             })}
           </ul>
-      ))}
 
-      {pagination.totalPages > 1 && !loading && !error && (
-        <div className="flex justify-center items-center mt-4 space-x-2">
-          <button
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1 || loading}
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition"
-          >
-            <FaChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-gray-700 font-semibold">
-            Sayfa {pagination.page} / {pagination.totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.totalPages || loading}
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition"
-          >
-            <FaChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center items-center mt-4 space-x-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1 || loading}
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition"
+              >
+                <FaChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-gray-700 font-semibold">
+                Sayfa {pagination.page} / {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages || loading}
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition"
+              >
+                <FaChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
             <h3 className="text-2xl font-bold text-[#1a1a1a] mb-6">
               {modalMode === 'add' ? 'Yeni Arkadaş Ekle' : 'Arkadaş Düzenle'}
@@ -314,12 +280,11 @@ function DashboardPage() {
                   type="text"
                   name="name"
                   value={form.name}
-                  onChange={handleInputChange}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
                   style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
                   required
                 />
-                 {modalError && !birthDateModalError && <p className="text-red-500 text-xs mt-1">{modalError}</p>}
               </div>
               <div>
                 <label className="block text-base font-medium mb-1">Doğum Tarihi</label>
@@ -327,19 +292,18 @@ function DashboardPage() {
                   type="date"
                   name="birthDate"
                   value={form.birthDate}
-                  onChange={handleInputChange}
-                  className={`w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border ${birthDateModalError ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans`}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                  className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
                   style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
                   required
                 />
-                {birthDateModalError && <p className="text-red-500 text-xs mt-1">{birthDateModalError}</p>}
               </div>
               <div>
                 <label className="block text-base font-medium mb-1">Kategori</label>
                 <select
                   name="category"
                   value={form.category}
-                  onChange={handleInputChange}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
                   className="w-full bg-[#f0f4ff] text-base px-5 py-3 rounded-lg border border-gray-200 focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition placeholder-gray-400 font-sans"
                   style={{ fontFamily: 'Montserrat, Arial, Helvetica, sans-serif' }}
                   required
@@ -351,12 +315,11 @@ function DashboardPage() {
                     </option>
                   ))}
                 </select>
-                 {modalError && !birthDateModalError && <p className="text-red-500 text-xs mt-1">{modalError}</p>}
               </div>
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"
-                  onClick={() => {setShowModal(false); setBirthDateModalError('');}}
+                  onClick={() => setShowModal(false)}
                   className="px-6 py-3 text-base font-semibold text-gray-600 hover:text-gray-800 transition"
                 >
                   İptal
@@ -364,9 +327,8 @@ function DashboardPage() {
                 <button
                   type="submit"
                   className="bg-[#889e38] text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-[#6e812e] transition shadow-md"
-                   disabled={modalLoading}
                 >
-                  {modalLoading ? 'Kaydediliyor...' : (modalMode === 'add' ? 'Ekle' : 'Güncelle')}
+                  {modalMode === 'add' ? 'Ekle' : 'Güncelle'}
                 </button>
               </div>
             </form>
@@ -375,7 +337,7 @@ function DashboardPage() {
       )}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
             <h3 className="text-2xl font-bold text-[#1a1a1a] mb-6">Arkadaşı Sil</h3>
             <p className="text-base text-gray-700 mb-6">
@@ -386,9 +348,8 @@ function DashboardPage() {
                 type="button"
                 onClick={confirmDeleteFriend}
                 className="px-6 py-3 text-base font-semibold text-gray-600 hover:text-gray-800 transition"
-                 disabled={modalLoading}
               >
-                {modalLoading ? 'Siliniyor...' : 'Sil'}
+                Sil
               </button>
               <button
                 type="button"
