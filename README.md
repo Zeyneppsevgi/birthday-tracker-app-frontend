@@ -116,6 +116,7 @@ package.json dosyasında aşağıdaki komutlar tanımlanmıştır:
 ##  Proje Yapısı
 
 Başlıca klasör ve dosyaların genel görünümü:
+```
 birthday-tracker-app/
 ├── src/
 │   ├── components/           # Yeniden kullanılabilir arayüz bileşenleri
@@ -137,7 +138,7 @@ birthday-tracker-app/
 ├── tailwind.config.js        # Tailwind CSS ayarları
 └── vite.config.js            # Vite ayar dosyası
 
-
+```
 
 ## API Entegrasyonu
 
