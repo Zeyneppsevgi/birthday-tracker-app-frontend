@@ -10,34 +10,29 @@ const isValidEmail = (email) => {
   return emailRegex.test(email);
 };
 
-const isValidDate = (dateString) => {
-    const regEx = /^\d{4}-\d{2}-\d{2}$/;
-    if(!dateString.match(regEx)) return false; 
-    const d = new Date(dateString);
-    const dNum = d.getTime();
-    if(!dNum && dNum !== 0) return false; 
-    return d.toISOString().slice(0,10) === dateString;
+const isValidDate = (date) => {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  return dateRegex.test(date);
 };
 
 function RegisterPage() {
   const [form, setForm] = useState({
-    name: '',
-    surname: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
-    birthdate: '',
+    birthDate: ''
   });
- 
   const [formErrors, setFormErrors] = useState({});
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-   const handleInputChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
+    setForm(prev => ({ ...prev, [name]: value }));
     if (formErrors[name]) {
-        setFormErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -65,11 +60,11 @@ function RegisterPage() {
             const newErrors = {};
             setFormErrors({});
 
-            if (form.name.length < 3) {
-                newErrors.name = "İsim en az 3 karakter olmalıdır";
+            if (form.firstName.length < 3) {
+                newErrors.firstName = "İsim en az 3 karakter olmalıdır";
             }
-            if (form.surname.length < 3) {
-                newErrors.surname = "Soyadı en az 3 karakter olmalıdır";
+            if (form.lastName.length < 3) {
+                newErrors.lastName = "Soyadı en az 3 karakter olmalıdır";
             }
             if (!isValidEmail(form.email)) {
                 newErrors.email = "Geçersiz e-posta formatı";
@@ -77,14 +72,12 @@ function RegisterPage() {
             if (form.password.length < 6) {
                 newErrors.password = "Parola en az 6 karakter olmalıdır";
             }
-             if (!isValidDate(form.birthdate)) {
-                 newErrors.birthdate = "Doğum tarihi formatı YYYY-MM-DD olmalıdır";
-             }
-
+            if (!isValidDate(form.birthDate)) {
+                newErrors.birthDate = "Doğum tarihi formatı YYYY-MM-DD olmalıdır";
+            }
             
             setFormErrors(newErrors);
 
-            
             if (Object.keys(newErrors).length > 0) {
                 return;
             }
@@ -93,17 +86,18 @@ function RegisterPage() {
             try {
               const response = await axios.post(`${API_BASE}/register`, form);
               setSuccess(response.data.message || 'Kayıt başarılı');
-              setForm({ name: '', surname: '', email: '', password: '', birthdate: '' });
-              
+              setForm({ firstName: '', lastName: '', email: '', password: '', birthDate: '' });
               setFormErrors({});
-            } catch (err) {
               
+              setTimeout(() => {
+                navigate('/login');
+              }, 2000);
+            } catch (err) {
               if (err.response?.data?.errors) { 
                 setFormErrors(err.response.data.errors);
               } else {
-                 
-                 setFormErrors({});
-                 setSuccess(''); 
+                setFormErrors({});
+                setSuccess(''); 
               }
             } finally {
               setLoading(false);
@@ -115,28 +109,28 @@ function RegisterPage() {
             <label className="block text-base font-medium mb-1">İsim</label>
             <input
               type="text"
-              name="name"
-              value={form.name}
+              name="firstName"
+              value={form.firstName}
               onChange={handleInputChange} 
               placeholder="İsim"
-              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.name ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
+              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.firstName ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
               required
             />
-             {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>} 
+             {formErrors.firstName && <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>} 
           </div>
 
            <div>
             <label className="block text-base font-medium mb-1">Soyisim</label>
             <input
               type="text"
-              name="surname"
-              value={form.surname}
+              name="lastName"
+              value={form.lastName}
               onChange={handleInputChange} 
               placeholder="Soyisim"
-              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.surname ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
+              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.lastName ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
               required
             />
-             {formErrors.surname && <p className="text-red-500 text-xs mt-1">{formErrors.surname}</p>} 
+             {formErrors.lastName && <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>} 
           </div>
 
            <div>
@@ -171,17 +165,15 @@ function RegisterPage() {
             <label className="block text-base font-medium mb-1">Doğum Tarihi</label>
             <input
               type="date"
-              name="birthdate"
-              value={form.birthdate}
+              name="birthDate"
+              value={form.birthDate}
               onChange={handleInputChange} 
               placeholder="Doğum Tarihi"
-              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.birthdate ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
+              className={`w-full bg-[#f0f4ff] text-base md:text-lg px-3 md:px-4 py-2 md:py-3 rounded-lg border ${formErrors.birthDate ? 'border-red-500' : 'border-gray-200'} focus:border-[#889e38] focus:ring-2 focus:ring-[#889e38]/20 outline-none transition`}
               required
             />
-             {formErrors.birthdate && <p className="text-red-500 text-xs mt-1">{formErrors.birthdate}</p>} 
+             {formErrors.birthDate && <p className="text-red-500 text-xs mt-1">{formErrors.birthDate}</p>} 
           </div>
-
-        
 
           {success && <div className="text-green-600 text-center">{success}</div>}
 
