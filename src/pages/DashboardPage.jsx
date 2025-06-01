@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaTrash, FaSearch, FaPlus, FaEdit } from 'react-icons/fa';
+import { FaTrash, FaSearch, FaPlus, FaEdit, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -20,7 +20,12 @@ function DashboardPage() {
   const [search, setSearch] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
-  const [pagination, setPagination] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   const zodiacIcons = {
     'Koç': '♈', 'Boğa': '♉', 'İkizler': '♊', 'Yengeç': '♋',
@@ -37,42 +42,49 @@ function DashboardPage() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const token = localStorage.getItem('token');
-        const [birthdaysRes, categoriesRes] = await Promise.all([
-          axios.get(`${API_BASE}/auth/friends/sorted`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_BASE}/categories`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-        setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
-        setPagination(birthdaysRes.data?.pagination || null);
+    fetchData(pagination.page);
+  }, [pagination.page]);
 
-        const catMap = {};
-        if (Array.isArray(categoriesRes.data)) {
-          categoriesRes.data.forEach(cat => {
-            catMap[cat.id] = cat.name;
-          });
-          setCategoriesArr(categoriesRes.data);
-        }
-        setCategories(catMap);
-      } catch (err) {
-        setError('Veriler alınamadı.');
-        setBirthdays([]);
-        setCategories({});
-        setCategoriesArr([]);
-        setPagination(null);
-      } finally {
-        setLoading(false);
+  const fetchData = async (pageToFetch = pagination.page) => {
+    setLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      const [birthdaysRes, categoriesRes] = await Promise.all([
+        axios.get(`${API_BASE}/auth/friends/sorted?page=${pageToFetch}&limit=${pagination.limit}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_BASE}/categories`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
+      setPagination(birthdaysRes.data?.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 });
+
+      const catMap = {};
+      if (Array.isArray(categoriesRes.data)) {
+        categoriesRes.data.forEach(cat => {
+          catMap[cat.id] = cat.name;
+        });
+        setCategoriesArr(categoriesRes.data);
       }
-    };
-    fetchData();
-  }, []);
+      setCategories(catMap);
+    } catch (err) {
+      setError('Veriler alınamadı.');
+      setBirthdays([]);
+      setCategories({});
+      setCategoriesArr([]);
+      setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
 
   const sortedBirthdays = birthdays.slice().sort((a, b) => a.daysLeft - b.daysLeft);
   const filteredBirthdays = sortedBirthdays.filter(friend =>
@@ -125,11 +137,7 @@ function DashboardPage() {
       }
       setModalSuccess(response.data.message || (modalMode === 'add' ? 'Arkadaş eklendi' : 'Arkadaş güncellendi'));
       setForm({ name: '', birthDate: '', category: '' });
-      const birthdaysRes = await axios.get(`${API_BASE}/auth/friends/sorted`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
-      setPagination(birthdaysRes.data?.pagination || null);
+      fetchData(pagination.page);
 
       setTimeout(() => {
         setShowModal(false);
@@ -154,11 +162,7 @@ function DashboardPage() {
       await axios.delete(`${API_BASE}/auth/friends/deleted/${deleteTargetId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const birthdaysRes = await axios.get(`${API_BASE}/auth/friends/sorted`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBirthdays(Array.isArray(birthdaysRes.data?.data) ? birthdaysRes.data.data : []);
-      setPagination(birthdaysRes.data?.pagination || null);
+      fetchData(pagination.page);
 
       setShowDeleteModal(false);
       setDeleteTargetId(null);
@@ -197,46 +201,70 @@ function DashboardPage() {
       {loading && <div>Yükleniyor...</div>}
       {error && <div className="text-red-500">{error}</div>}
       {!loading && !error && (
-        <ul className="space-y-2">
-          {filteredBirthdays.map(friend => {
-            const catId = typeof friend.category === 'object' ? friend.category.id : friend.category;
-            const catName = categories[catId] || categories[String(catId)] || categories[Number(catId)];
-            return (
-              <li
-                key={friend.id}
-                className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.025] hover:shadow-lg mb-2 ${friend.daysLeft === 0 ? 'ring-2 ring-green-300' : friend.isUpcoming ? 'ring-2 ring-yellow-200' : ''}`}
-                onClick={() => openModal('edit', friend)}
-                title="Düzenle"
+        <>
+          <ul className="space-y-2 mb-4">
+            {filteredBirthdays.map(friend => {
+              const catId = typeof friend.category === 'object' ? friend.category.id : friend.category;
+              const catName = categories[catId] || categories[String(catId)] || categories[Number(catId)];
+              return (
+                <li
+                  key={friend.id}
+                  className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.025] hover:shadow-lg mb-2 ${friend.daysLeft === 0 ? 'ring-2 ring-green-300' : friend.isUpcoming ? 'ring-2 ring-yellow-200' : ''}`}
+                  onClick={() => openModal('edit', friend)}
+                  title="Düzenle"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-lg text-[#222]">{friend.name}</span>
+                      {catName && (
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${categoryColors[catName] || 'bg-gray-100 text-gray-700'}`}>{catName}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                      <span>🎂 {new Date(friend.birthDate).toLocaleDateString('tr-TR')}</span>
+                      <span>{zodiacIcons[friend.zodiac] || '⭐'} {friend.zodiac}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {friend.daysLeft === 0 && <span className="text-green-700 font-bold">Bugün Doğum Günü!</span>}
+                    {friend.isUpcoming && friend.daysLeft > 0 && <span className="text-yellow-700 font-semibold">{friend.daysLeft} gün sonra</span>}
+                    {!friend.isUpcoming && friend.daysLeft > 0 && <span className="text-gray-500">{friend.daysLeft} gün sonra</span>}
+                    {friend.daysLeft > 350 && <span className="text-gray-400">Geçti</span>}
+                    <button
+                      className="ml-2 bg-red-500 hover:bg-red-700 text-white p-2 rounded-full shadow transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
+                      title="Sil"
+                      onClick={e => handleDeleteFriend(friend.id, e)}
+                    >
+                      <FaTrash size={16} />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center items-center mt-4 space-x-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1 || loading}
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition"
               >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-lg text-[#222]">{friend.name}</span>
-                    {catName && (
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${categoryColors[catName] || 'bg-gray-100 text-gray-700'}`}>{catName}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                    <span>🎂 {new Date(friend.birthDate).toLocaleDateString('tr-TR')}</span>
-                    <span>{zodiacIcons[friend.zodiac] || '⭐'} {friend.zodiac}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {friend.daysLeft === 0 && <span className="text-green-700 font-bold">Bugün Doğum Günü!</span>}
-                  {friend.isUpcoming && friend.daysLeft > 0 && <span className="text-yellow-700 font-semibold">{friend.daysLeft} gün sonra</span>}
-                  {!friend.isUpcoming && friend.daysLeft > 0 && <span className="text-gray-500">{friend.daysLeft} gün sonra</span>}
-                  {friend.daysLeft > 350 && <span className="text-gray-400">Geçti</span>}
-                  <button
-                    className="ml-2 bg-red-500 hover:bg-red-700 text-white p-2 rounded-full shadow transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
-                    title="Sil"
-                    onClick={e => handleDeleteFriend(friend.id, e)}
-                  >
-                    <FaTrash size={16} />
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                <FaChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-gray-700 font-semibold">
+                Sayfa {pagination.page} / {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages || loading}
+                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition"
+              >
+                <FaChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (
