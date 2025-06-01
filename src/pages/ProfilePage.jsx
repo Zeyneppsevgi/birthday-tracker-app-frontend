@@ -45,13 +45,10 @@ function ProfilePage() {
       } catch (err) {
         console.error('Profil bilgileri yüklenirken hata:', err);
         if (err.response) {
-          // Sunucudan gelen hata mesajı
           setError(`Hata: ${err.response.data?.message || 'Sunucu hatası'}`);
         } else if (err.request) {
-          // İstek yapıldı ama yanıt alınamadı
           setError('Sunucuya ulaşılamıyor. Lütfen internet bağlantınızı kontrol edin.');
         } else {
-          // İstek oluşturulurken hata oluştu
           setError('Bir hata oluştu. Lütfen tekrar deneyin.');
         }
         setLoading(false);
@@ -82,7 +79,6 @@ function ProfilePage() {
       });
       setSuccess('Profil güncellendi!');
       setLoading(false);
-      // Başarılı güncellemeden sonra 1 saniye bekleyip dashboard'a yönlendir
       setTimeout(() => {
         navigate('/dashboard');
       }, 1000);

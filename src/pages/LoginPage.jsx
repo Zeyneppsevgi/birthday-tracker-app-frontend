@@ -4,9 +4,7 @@ import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-// Basit e-posta formatı kontrolü (RegisterPage'den kopyalandı)
 const isValidEmail = (email) => {
-  // eslint-disable-next-line no-useless-escape
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 };
