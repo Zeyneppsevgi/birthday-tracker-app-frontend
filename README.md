@@ -138,6 +138,7 @@ birthday-tracker-app/
 └── vite.config.js            # Vite ayar dosyası
 
 
+
 ## API Entegrasyonu
 
 Bu uygulama, aşağıdaki işlemleri gerçekleştirmek için bir backend API ile iletişim kurar:
